@@ -2,7 +2,7 @@
 
 source ./helper.sh
 
-log "Starting system bootstrap..."
+log "Starting Arch system setup..."
 
 safe_run ./packages.sh
 safe_run ./config.sh
@@ -13,5 +13,5 @@ if [ ${#FAILED[@]} -ne 0 ]; then
   warn "Some steps failed:"
   printf ' - %s\n' "${FAILED[@]}"
 else
-  log "System setup completed successfully 🎉"
+  log "System setup completed successfully "
 fi
