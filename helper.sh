@@ -15,5 +15,3 @@ warn() {
 safe_run() {
   "$@" || FAILED+=("$*")
 }
-
-echo $ROOT_DIR

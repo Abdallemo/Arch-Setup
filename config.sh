@@ -10,7 +10,7 @@ link() {
 }
 
 
-link $ROOT_DIR/dotfiles/zshrc ~/.zshrc
+link $ROOT_DIR/dotfiles/.zshrc ~/.zshrc
 
 
 mkdir -p ~/.config/zsh_scripts
