@@ -23,6 +23,23 @@ else
   log "Neovim config already exists"
 fi
 
+if [ ! -d ~/.config/kitty ]; then
+  log "Copying Kitty config..."
+  link $ROOT_DIR/dotfiles/kitty ~/.config/kitty
+else
+  log "Kitty config already exists."
+  log "Do you want to replace it? (y/n) "
+  read -n 1 -r
+
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    log "Replacing existing config..."
+    rm -rf ~/.config/kitty
+    link $ROOT_DIR/dotfiles/kitty ~/.config/kitty
+  else
+    log "Skipping..."
+  fi
+fi
+
 
 git config --global user.name >/dev/null || \
   safe_run git config --global user.name "Abdallemo"
