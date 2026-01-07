@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+source ./helper.sh
+
+packages=(
+    "git"
+    "curl"
+    "wget"
+    "unzip"
+    "zip"
+    "zsh"
+    "neovim"
+    "nodejs"
+    "npm"
+    "go"
+    "ffmpeg"
+    "netcat"
+    "cloc"
+    "speedtest-cli"
+    "mariadb"
+    "reflector"
+    "xdg-desktop-portal"
+    "xdg-desktop-portal-kde"
+    "xdg-desktop-portal-gtk"
+    "wine"
+    "wine-mono"
+    "wine-gecko"
+    "dolphin"
+    "obs-studio"
+    "base-devel"
+    "zed"
+    "lsd"
+    "bottles"
+    "pamac-all"
+    "goverlay"
+    "mangohud"
+)
+
+#
+
+if ! command -v yay &>/dev/null; then
+  log "Installing yay..."
+  safe_run git clone https://aur.archlinux.org/yay.git /tmp/yay
+  safe_run bash -c "cd /tmp/yay && makepkg -si --noconfirm"
+else
+  log "yay already installed"
+fi
+
+log "Installing packages..."
+safe_run yay -S --needed --noconfirm "${packages[@]}"
+
+log "Installing global npm tools..."
+safe_run npm install -g pnpm
+
+log "Installing uv..."
+safe_run bash -c "curl -LsSf https://astral.sh/uv/install.sh | sh"
