@@ -168,3 +168,14 @@ ff-mp3() {
     local exit_status=$?
     alert "Audio Rip" "$output.mp3" "$exit_status"
 }
+
+gh-push(){
+    local commit="$1"
+    if [ -z "$commit"] ]; then
+        echo "Usage: gh-push \"message"\"
+        return 1
+    fi
+
+    git add . &&  git commit -m "$commit" &&  git push
+
+}
