@@ -79,6 +79,107 @@ ff-gpu() {
         alert "GPU Encode" "$output.mp4" "$?"
 }
 
+
+ff-resolve() {
+    local log_level="error"
+    local input=""
+    local output=""
+    local bitrate="70M"
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -v|--verbose) log_level="info"; shift ;;
+            -b|--bitrate)
+                bitrate="$2"
+                if [[ "$bitrate" =~ ^[0-9]+$ ]]; then bitrate="${bitrate}M"; fi
+                shift 2
+                ;;
+            *)
+                if [ -z "$input" ]; then input="$1"; else output="$1"; fi
+                shift
+                ;;
+        esac
+    done
+
+    if [ -z "$input" ] || [ -z "$output" ]; then
+        echo "Usage: ff-resolve-cpu [-b 50] input output"
+        return 1
+    fi
+
+    echo "Converting $input to ${output}.mov (CPU MPEG-2)..."
+
+    ffmpeg -hide_banner \
+        -loglevel "$log_level" \
+        -stats \
+        -i "$input" \
+        -c:v mpeg2video \
+        -q:v 1 \
+        -maxrate "$bitrate" \
+        -bufsize 20M \
+        -c:a pcm_s16le \
+        "${output}.mov"
+
+    local exit_status=$?
+    alert "CPU Resolve Convert" "$output.mov" "$exit_status"
+}
+
+ff-resolve-pro() {
+    local log_level="error"
+    local input=""
+    local output=""
+    local profile="dnxhr_lb"
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -v|--verbose)
+                log_level="info"
+                shift
+                ;;
+            -hq|--high-quality)
+                profile="dnxhr_sq"
+                shift
+                ;;
+            -*)
+                echo "Unknown option: $1"
+                return 1
+                ;;
+            *)
+                if [ -z "$input" ]; then
+                    input="$1"
+                else
+                    output="$1"
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    if [ -z "$input" ] || [ -z "$output" ]; then
+        echo "Usage: ff-resolve [-v] [-lb] input_file output_name"
+        echo "  -hq : Medium Bandwidth (smaller files, good for 1080p editing)"
+        return 1
+    fi
+
+    echo "Converting $input to ${output}.mov for DaVinci Resolve..."
+    echo "Profile: $profile"
+
+    ffmpeg -hide_banner \
+        -loglevel "$log_level" \
+        -stats \
+        -init_hw_device vaapi=va:/dev/dri/renderD128 \
+        -hwaccel vaapi \
+        -hwaccel_output_format yuv420p \
+        -i "$input" \
+        -c:v dnxhd \
+        -profile:v "$profile" \
+        -pix_fmt yuv422p \
+        -c:a pcm_s16le \
+        "${output}.mov"
+
+    local exit_status=$?
+    alert "Resolve Convert" "$output.mov" "$exit_status"
+}
+
 ff-cpu() {
     local log_level="error"
     local input=""
@@ -171,11 +272,10 @@ ff-mp3() {
 
 gh-push(){
     local commit="$1"
-    if [ -z "$commit"] ]; then
-        echo "Usage: gh-push \"message"\"
+    if [ -z "$commit" ]; then
+        echo "Usage: gh-push \"message\""
         return 1
     fi
 
     git add . &&  git commit -m "$commit" &&  git push
-
 }
