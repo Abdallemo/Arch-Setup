@@ -279,3 +279,62 @@ gh-push(){
 
     git add . &&  git commit -m "$commit" &&  git push
 }
+
+db-bak() {
+    local service="$1"
+    local timestamp=$(date +%Y%m%d_%H%M)
+    local file="backup_${service}_${timestamp}.sql"
+
+    if [[ -z "$service" ]]; then
+        echo "Error: Service name required."
+        echo "Usage: db-bak <service_name>"
+        return 1
+    fi
+
+    if [[ -f "$file" ]]; then
+        echo "Error: Backup for this minute already exists ($file)."
+        return 1
+    fi
+
+    echo "Dumping $service to $file..."
+
+    if pg_dump --clean --if-exists --no-owner --no-privileges "service=${service}" > "$file"; then
+        echo "Success: Created $file"
+    else
+        echo "Dump failed. Cleaning up empty file..."
+        rm -f "$file"
+        return 1
+    fi
+}
+
+db-restore() {
+    local service="$1"
+    local file="$2"
+
+    if [[ -z "$service" || -z "$file" ]]; then
+        echo "Usage: db-restore <service_name> <backup_file.sql>"
+        return 1
+    fi
+
+    if [[ ! -f "$file" ]]; then
+        echo "Error: File '$file' not found."
+        return 1
+    fi
+
+    echo "⚠️ Warning: This will overwrite data in service: $service"
+    echo -n "Continue? (y/n): "
+    read -r confirmation
+    if [[ "$confirmation" != "y" ]]; then
+        echo "Restore cancelled."
+        return 0
+    fi
+
+    echo "Restoring $file to $service..."
+
+    if psql "service=${service}" < "$file"; then
+        echo "Success: $service has been restored from $file"
+    else
+        echo "Error: Restore failed."
+        return 1
+    fi
+}

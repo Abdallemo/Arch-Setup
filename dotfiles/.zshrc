@@ -32,6 +32,7 @@ esac
 alias ls='lsd -hS --group-directories-first'
 alias grep='grep --color=auto'
 alias p=pnpm
+alias now='date +%Y%m%d_%H%M%S'
 
 # Styles
 zstyle ':fzf-tab:*' fzf-flags --preview-window=hidden --height=50%
