@@ -338,3 +338,90 @@ db-restore() {
         return 1
     fi
 }
+
+au-test(){
+    local duration="${1:-5}"
+    local file_name="test_mic.wav"
+
+    if [[ "$1" == "-p" ]]; then
+        if [[ -f "$file_name" ]]; then
+            aplay "$file_name"
+            return 0
+        else
+            echo "Error: No record found at $file_name"
+            return 1
+        fi
+    fi
+
+    if [[ ! "$duration" =~ ^[0-9]+$ ]]; then
+        echo "Error: '$duration' is not a valid number."
+        echo "Usage: au-test [duration_in_sec] or au-test -p"
+        return 1
+    fi
+
+    arecord --format=cd --duration=${duration} ${file_name} && aplay ${file_name}
+}
+
+
+yt-download() {
+    local url="$1"
+    local upload_location="$HOME/Videos/YtDownloads/%(uploader)s - %(title)s.%(ext)s"
+
+    if [[ -z "$url" ]]; then
+        echo "Usage: yt-download <url>"
+        return 1
+    fi
+
+    mkdir -p "$HOME/Videos/YtDownloads"
+
+    yt-dlp \
+        -N 8 \
+        --quiet --progress \
+        --newline \
+        --restrict-filenames \
+        -o "$upload_location" \
+        --exec 'echo -e "\n\033[0;32m{}"' \
+        "$url"
+}
+pdf-comp(){
+    local input="$1"
+    local output="$2"
+
+    if [ -z "$input" ] || [ -z "$output" ]; then
+        echo "Usage: pdf-comp input_file output_name"
+        return 1
+    fi
+    gs -sDEVICE=pdfwrite \
+    -dCompatibilityLevel=1.4 \
+    -dPDFSETTINGS=/printer \
+    -dNOPAUSE \
+    -dQUIET \
+    -dBATCH \
+    -sOutputFile="${output}.pdf" \
+    "$input"
+}
+
+docx-comp() {
+    local input="$1"
+    local output="$2"
+
+    if [ -z "$input" ] || [ -z "$output" ]; then
+        echo "Usage: docx-comp input.docx output_name"
+        return 1
+    fi
+
+    local tmp_dir=$(mktemp -d)
+
+    unzip -q "$input" -d "$tmp_dir"
+
+    if [ -d "$tmp_dir/word/media" ]; then
+        find "$tmp_dir/word/media" -type f -regex '.*\.\(jpg\|jpeg\|png\)' \
+            -exec mogrify -resize 2000x2000\> -strip -quality 85 {} +
+    fi
+
+    (cd "$tmp_dir" && zip -rq - .) > "${output}.docx"
+
+    rm -rf "$tmp_dir"
+
+    echo "Compressed docx saved as ${output}.docx"
+}

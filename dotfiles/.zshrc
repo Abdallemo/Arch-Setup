@@ -12,7 +12,7 @@ source /usr/share/fzf/completion.zsh
 
 
 # Global Binaries
-export PATH="$HOME/.local/bin:/usr/local/go/bin:/usr/local/node/bin:/usr/lib/rstudio:/home/abdallemo/.config/herd-lite/bin:$PATH"
+export PATH="$HOME/.local/bin:/usr/local/go/bin:/$HOME/go/bin:/usr/local/node/bin:/usr/lib/rstudio:/home/abdallemo/.config/herd-lite/bin:$PATH"
 export PNPM_HOME="/home/abdallemo/.local/share/pnpm"
 export PHP_INI_SCAN_DIR="/home/abdallemo/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
 export FNM_PATH="/home/abdallemo/.local/share/fnm"

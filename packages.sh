@@ -81,6 +81,15 @@ packages=(
     "kitty"
     "kdeconnect"
     "downgrade"
+    "zsh-autosuggestions"
+    "zsh-syntax-highlighting"
+    "zsh-autocomplete"
+    "fzf"
+    "gcc-fortran"
+    "python-setuptools-reproducible"
+    "patool"
+    "obs-cmd"
+    "obs-plugin-backgroundremoval"
 )
 
 #
