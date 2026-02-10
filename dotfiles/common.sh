@@ -12,6 +12,18 @@ yay-clean() {
     fi
 }
 
+log() {
+    echo -e "\e[32m[*]\e[0m $*"
+}
+
+warn() {
+    echo -e "\e[33m[!]\e[0m $*" >&2
+}
+
+err() {
+    echo -e "\e[31m[x]\e[0m $*" >&2
+}
+
 alert() {
     local title="$1"
     local msg="$2"
@@ -424,4 +436,120 @@ docx-comp() {
     rm -rf "$tmp_dir"
 
     echo "Compressed docx saved as ${output}.docx"
+}
+
+make_tmp() {
+    mktemp --suffix=".$1"
+}
+
+ff-whisper-audio() {
+    local log_level="error"
+    local input=""
+    local output=""
+
+    while (( $# )); do
+        case "$1" in
+            -*)
+                echo "Unknown option: $1"
+                return 1
+                ;;
+            *)
+                if [[ -z "$input" ]]; then
+                    input="$1"
+                else
+                    output="$1"
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    [[ -z "$input" || -z "$output" ]] && {
+        echo "Usage: ff-whisper-audio [-v] input_file output.wav"
+        return 1
+    }
+
+    ffmpeg -y -nostdin \
+        -hide_banner \
+        -loglevel "$log_level" \
+        -stats \
+        -i "$input" \
+        -ar 16000 \
+        -ac 1 \
+        -c:a pcm_s16le \
+        "$output"
+}
+
+whisper() {
+    local input=""
+    local model_alias="sm-en"
+    local model=""
+    local output=""
+
+    while (( $# )); do
+        case "$1" in
+            -m|--model)
+                model_alias="$2"
+                shift 2
+                ;;
+            -*)
+                echo "Unknown option: $1"
+                return 1
+                ;;
+            *)
+                input="$1"
+                shift
+                ;;
+        esac
+    done
+
+    case "$model_alias" in
+        sm-en)
+            model="/usr/share/whisper.cpp-model-small.en/ggml-small.en.bin"
+            ;;
+        *)
+            echo "Unknown model : $model_alias"
+            return 1
+            ;;
+    esac
+
+    if [[ -z "$input" ]]; then
+        echo "No input file provided"
+        echo "Usage: whisper [options] input.wav"
+        return 1
+    fi
+
+    output="${input%.*}"
+   case "$input" in
+       *.mp4|*.mov|*.mkv)
+           log "Detected video input → extracting & normalizing for Whisper"
+           tmp1=$(make_tmp wav)
+           trap 'rm -f "$tmp1"' EXIT
+
+           ff-whisper-audio "$input" "$tmp1" || return 1
+           input="$tmp1"
+           ;;
+       *.mp3|*.wav|*.m4a|*.ogg|*.opus)
+           log "Detected audio input → normalizing for Whisper"
+           tmp1=$(make_tmp wav)
+           trap 'rm -f "$tmp1"' EXIT
+
+           ff-whisper-audio "$input" "$tmp1" || return 1
+           input="$tmp1"
+           ;;
+       *)
+           err "Unsupported input format: $input"
+           return 1
+           ;;
+   esac
+
+
+    whisper-cli \
+        -m "$model" \
+        -f "$input" \
+        -otxt
+
+    mv "${input}.txt" "$(pwd)/${output}.txt"
+    local exit_status=$?
+    alert "Transcribe Finished"  "$exit_status"
 }
