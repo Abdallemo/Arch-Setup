@@ -547,9 +547,9 @@ whisper() {
     whisper-cli \
         -m "$model" \
         -f "$input" \
-        -otxt
+        -otxt \
+        -of "$output"
 
-    mv "${input}.txt" "$(pwd)/${output}.txt"
     local exit_status=$?
     alert "Transcribe Finished"  "$exit_status"
 }
