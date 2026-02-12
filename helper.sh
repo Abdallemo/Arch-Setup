@@ -76,3 +76,21 @@ alert() {
         canberra-gtk-play -i dialog-error &
     fi
 }
+
+set_config_var() {
+    local key=$1
+    local sep=$2
+    local value=$3
+    local file=$4
+    local new_line="${key}${sep}${value}"
+
+    [ ! -f "$file" ] && safe_run sudo touch "$file"
+
+    if grep -q "^[[:space:]]*$key" "$file"; then
+        log "Updating '$key' in $file..."
+        safe_run sudo sed -i "s|^[[:space:]]*$key.*$|$new_line|" "$file"
+    else
+        log "Adding '$key' to $file..."
+        safe_run bash -c "echo '$new_line' | sudo tee -a '$file' > /dev/null"
+    fi
+}

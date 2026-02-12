@@ -27,20 +27,26 @@ setup_config() {
     fi
 }
 
-link $ROOT_DIR/dotfiles/.zshrc ~/.zshrc
+link $ROOT_DIR/dotfiles/.zshrc $HOME/.zshrc
 mkdir -p ~/.config/zsh_scripts
-link $ROOT_DIR/dotfiles/common.sh ~/.config/zsh_scripts/common.sh
-link $ROOT_DIR/helper.sh ~/.config/zsh_scripts/helper.sh
+link $ROOT_DIR/dotfiles/common.sh $HOME/.config/zsh_scripts/common.sh
+link $ROOT_DIR/helper.sh $HOME/.config/zsh_scripts/helper.sh
 
-source $HOME/.zshrc
 
 setup_nvim_repo() {
   git clone https://github.com/Abdallemo/neovim-setup.git "$HOME/.config/nvim"
 }
+setup_pg_service() {
+    cp -r $ROOT_DIR/dotfiles/pg_service "$HOME/.config"
+}
+setup_config "nvim" setup_nvim_repo
+setup_config "pg_service" setup_pg_service
 
 setup_config "kitty"
 setup_config "MangoHud"
-setup_config "nvim" setup_nvim_repo
+
+set_config_var "export PGSERVICEFILE" "=" "$HOME/.config/pg_service/.pg_service.conf" "/etc/profile.d/pg.sh"
+set_config_var "GTK_USE_PORTAL" "=" "1" "/etc/environment"
 
 
 git config --global user.name >/dev/null || \
