@@ -1,37 +1,46 @@
 #!/usr/bin/env bash
 source ./helper.sh
 
+setup_config() {
+    link_default() { link "$source_dir" "$target_dir"; }
+
+    local folder_name=$1
+    local action_func=${2:-link_default}
+    local target_dir="$HOME/.config/$folder_name"
+    local source_dir="$ROOT_DIR/dotfiles/$folder_name"
+
+    if [ ! -d "$target_dir" ]; then
+    log "Setting up $folder_name..."
+    $action_func
+    else
+    log "$folder_name already exists."
+    read -p "$(log "Do you want to replace it? (y/n) ")" -n 1 -r
+    echo
+
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        log "Replacing existing $folder_name..."
+        rm -rf "$target_dir"
+        $action_func
+    else
+        log "Skipping $folder_name..."
+    fi
+    fi
+}
+
 link $ROOT_DIR/dotfiles/.zshrc ~/.zshrc
-
-
 mkdir -p ~/.config/zsh_scripts
-
 link $ROOT_DIR/dotfiles/common.sh ~/.config/zsh_scripts/common.sh
 link $ROOT_DIR/helper.sh ~/.config/zsh_scripts/helper.sh
 
-if [ ! -d ~/.config/nvim ]; then
-  log "Cloning Neovim config..."
-  safe_run git clone https://github.com/Abdallemo/neovim-setup.git ~/.config/nvim
-else
-  log "Neovim config already exists"
-fi
+source $HOME/.zshrc
 
-if [ ! -d ~/.config/kitty ]; then
-  log "Copying Kitty config..."
-  link $ROOT_DIR/dotfiles/kitty ~/.config/kitty
-else
-  log "Kitty config already exists."
-  log "Do you want to replace it? (y/n) "
-  read -n 1 -r
+setup_nvim_repo() {
+  git clone https://github.com/Abdallemo/neovim-setup.git "$HOME/.config/nvim"
+}
 
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    log "Replacing existing config..."
-    rm -rf ~/.config/kitty
-    link $ROOT_DIR/dotfiles/kitty ~/.config/kitty
-  else
-    log "Skipping..."
-  fi
-fi
+setup_config "kitty"
+setup_config "MangoHud"
+setup_config "nvim" setup_nvim_repo
 
 
 git config --global user.name >/dev/null || \

@@ -91,6 +91,10 @@ packages=(
     "obs-cmd"
     "obs-plugin-backgroundremoval"
     "whisper.cpp"
+    "qemu-full"
+    "virt-manager"
+    "bottles"
+    "audacity"
 )
 
 #
