@@ -1,47 +1,25 @@
+source $HOME/.config/zsh_scripts/helper.sh
+
 yay-clean() {
     if [ -z "$1" ]; then
-        echo "Usage: yayclean <package_name>"
+        err "Usage: yayclean <package_name>"
         return 1
     fi
     local cache_dir="$HOME/.cache/yay/$1"
     if [ -d "$cache_dir" ]; then
         rm -rf "$cache_dir"
-        echo "✓ Removed cache for: $1"
+        log "✓ Removed cache for: $1"
     else
-        echo "✗ No cache folder found for: $1"
+        err "✗ No cache folder found for: $1"
     fi
 }
 
-log() {
-    echo -e "\e[32m[*]\e[0m $*"
-}
-
-warn() {
-    echo -e "\e[33m[!]\e[0m $*" >&2
-}
-
-err() {
-    echo -e "\e[31m[x]\e[0m $*" >&2
-}
-
-alert() {
-    local title="$1"
-    local msg="$2"
-    local exit_code="${3:-0}"
-
-    if [ "$exit_code" -eq 0 ]; then
-        notify-send "$title" "$msg" --icon=video-x-generic --app-name="FFmpeg"
-        canberra-gtk-play -i message-new-instant &
-    else
-        notify-send "$title Failed" "Check terminal for logs" --icon=dialog-error --app-name="FFmpeg"
-        canberra-gtk-play -i dialog-error &
-    fi
-}
 
 ff-gpu() {
     local log_level="error"
     local input=""
     local output=""
+
 
     while [ $# -gt 0 ]; do
         case "$1" in
@@ -50,26 +28,26 @@ ff-gpu() {
                 shift
                 ;;
             -*)
-                echo "Unknown option: $1"
+                err "Unknown option: $1"
                 return 1
                 ;;
             *)
                 if [ -z "$input" ]; then
                     input="$1"
-                else
-                    output="$1"
                 fi
                 shift
                 ;;
         esac
     done
 
-    if [ -z "$input" ] || [ -z "$output" ]; then
-        echo "Usage: ff-gpu [-v] input_file output_name"
+    if [[ -z "$input" ]]; then
+        err "Usage: ff-gpu [-v] input_file"
         return 1
     fi
 
-    echo "Encoding $input to ${output}.mp4..."
+    output="$(current_time)_${input%.*}.mp4"
+
+    log "Encoding $input to ${output}..."
     ffmpeg -hide_banner \
         -loglevel "$log_level" \
         -stats \
@@ -86,7 +64,7 @@ ff-gpu() {
         -qp 22 \
         -c:a aac \
         -b:a 192k \
-        "${output}.mp4"
+        "$output"
 
         alert "GPU Encode" "$output.mp4" "$?"
 }
@@ -107,18 +85,19 @@ ff-resolve() {
                 shift 2
                 ;;
             *)
-                if [ -z "$input" ]; then input="$1"; else output="$1"; fi
+                if [ -z "$input" ]; then input="$1"; fi
                 shift
                 ;;
         esac
     done
 
-    if [ -z "$input" ] || [ -z "$output" ]; then
-        echo "Usage: ff-resolve-cpu [-b 50] input output"
+    if [[ -z "$input" ]]; then
+        err "Usage: ff-resolve [-b 70] input "
         return 1
     fi
 
-    echo "Converting $input to ${output}.mov (CPU MPEG-2)..."
+    output="$(current_time)_${input%.*}.mov"
+    log "Converting $input to ${output}.mov (CPU MPEG-2)..."
 
     ffmpeg -hide_banner \
         -loglevel "$log_level" \
@@ -129,7 +108,7 @@ ff-resolve() {
         -maxrate "$bitrate" \
         -bufsize 20M \
         -c:a pcm_s16le \
-        "${output}.mov"
+        "${output}"
 
     local exit_status=$?
     alert "CPU Resolve Convert" "$output.mov" "$exit_status"
@@ -152,28 +131,26 @@ ff-resolve-pro() {
                 shift
                 ;;
             -*)
-                echo "Unknown option: $1"
+                err "Unknown option: $1"
+                info "-hq : Medium Bandwidth (smaller files, good for 1080p editing)"
                 return 1
                 ;;
             *)
                 if [ -z "$input" ]; then
                     input="$1"
-                else
-                    output="$1"
                 fi
                 shift
                 ;;
         esac
     done
 
-    if [ -z "$input" ] || [ -z "$output" ]; then
-        echo "Usage: ff-resolve [-v] [-lb] input_file output_name"
-        echo "  -hq : Medium Bandwidth (smaller files, good for 1080p editing)"
+    if [[ -z "$input" ]]; then
+        err "Usage: ff-resolve-pro [-v] [-lb] input_file "
         return 1
     fi
-
-    echo "Converting $input to ${output}.mov for DaVinci Resolve..."
-    echo "Profile: $profile"
+    output="$(current_time)_${input%.*}.mov"
+    log "Converting $input to ${output} for DaVinci Resolve..."
+    info "Profile: $profile"
 
     ffmpeg -hide_banner \
         -loglevel "$log_level" \
@@ -186,7 +163,7 @@ ff-resolve-pro() {
         -profile:v "$profile" \
         -pix_fmt yuv422p \
         -c:a pcm_s16le \
-        "${output}.mov"
+        "$output"
 
     local exit_status=$?
     alert "Resolve Convert" "$output.mov" "$exit_status"
@@ -204,26 +181,25 @@ ff-cpu() {
                 shift
                 ;;
             -*)
-                echo "Unknown option: $1"
+                err "Unknown option: $1"
                 return 1
                 ;;
             *)
                 if [ -z "$input" ]; then
                     input="$1"
-                else
-                    output="$1"
                 fi
                 shift
                 ;;
         esac
     done
 
-    if [ -z "$input" ] || [ -z "$output" ]; then
-        echo "Usage: ff-slow [-v] input_file output_name"
+    if [[ -z "$input" ]]; then
+        err "Usage: ff-cpu [-v] input_file "
         return 1
     fi
 
-    echo "Encoding $input to ${output}.mp4 (CPU x264)..."
+    output="$(current_time)_${input%.*}.mp4"
+    log "Encoding $input to ${output} (CPU x264)..."
     ffmpeg -hide_banner \
     -loglevel "$log_level" \
     -stats \
@@ -233,7 +209,7 @@ ff-cpu() {
     -preset slow \
     -c:a aac \
     -b:a 192k \
-    "${output}.mp4"
+    "$output"
     local exit_status=$?
     alert "CPU Encode" "$output.mp4" "$exit_status"
 }
@@ -250,26 +226,25 @@ ff-mp3() {
                 shift
                 ;;
             -*)
-                echo "Unknown option: $1"
+                err "Unknown option: $1"
                 return 1
                 ;;
             *)
                 if [ -z "$input" ]; then
                     input="$1"
-                else
-                    output="$1"
                 fi
                 shift
                 ;;
         esac
     done
 
-    if [ -z "$input" ] || [ -z "$output" ]; then
-        echo "Usage: ff-mp3 [-v] input_file output_name"
+    if [[ -z "$input" ]]; then
+        err "Usage: ff-mp3 [-v] input_file "
         return 1
     fi
 
-    echo "Extracting audio from $input to ${output}.mp3..."
+    output="$(current_time)_${input%.*}.mp3"
+    log "Extracting audio from $input to ${output}..."
     ffmpeg -hide_banner \
     -loglevel "$log_level" \
     -stats \
@@ -277,7 +252,7 @@ ff-mp3() {
     -vn \
     -c:a libmp3lame \
     -q:a 2 \
-    "${output}.mp3"
+    "$output"
     local exit_status=$?
     alert "Audio Rip" "$output.mp3" "$exit_status"
 }
@@ -285,7 +260,7 @@ ff-mp3() {
 gh-push(){
     local commit="$1"
     if [ -z "$commit" ]; then
-        echo "Usage: gh-push \"message\""
+        err "Usage: gh-push \"message\""
         return 1
     fi
 
@@ -298,22 +273,22 @@ db-bak() {
     local file="backup_${service}_${timestamp}.sql"
 
     if [[ -z "$service" ]]; then
-        echo "Error: Service name required."
-        echo "Usage: db-bak <service_name>"
+        err "Error: Service name required."
+        info "Usage: db-bak <service_name>"
         return 1
     fi
 
     if [[ -f "$file" ]]; then
-        echo "Error: Backup for this minute already exists ($file)."
+        err "Error: Backup for this minute already exists ($file)."
         return 1
     fi
 
-    echo "Dumping $service to $file..."
+    log "Dumping $service to $file..."
 
     if pg_dump --clean --if-exists --no-owner --no-privileges "service=${service}" > "$file"; then
-        echo "Success: Created $file"
+        log "Success: Created $file"
     else
-        echo "Dump failed. Cleaning up empty file..."
+        err "Dump failed. Cleaning up empty file..."
         rm -f "$file"
         return 1
     fi
@@ -324,29 +299,29 @@ db-restore() {
     local file="$2"
 
     if [[ -z "$service" || -z "$file" ]]; then
-        echo "Usage: db-restore <service_name> <backup_file.sql>"
+        err "Usage: db-restore <service_name> <backup_file.sql>"
         return 1
     fi
 
     if [[ ! -f "$file" ]]; then
-        echo "Error: File '$file' not found."
+        err "Error: File '$file' not found."
         return 1
     fi
 
-    echo "⚠️ Warning: This will overwrite data in service: $service"
-    echo -n "Continue? (y/n): "
+    warn "Warning: This will overwrite data in service: $service"
+    info  "Continue? (y/n): "
     read -r confirmation
     if [[ "$confirmation" != "y" ]]; then
-        echo "Restore cancelled."
+        err "Restore cancelled."
         return 0
     fi
 
-    echo "Restoring $file to $service..."
+    info "Restoring $file to $service..."
 
     if psql "service=${service}" < "$file"; then
-        echo "Success: $service has been restored from $file"
+        log "Success: $service has been restored from $file"
     else
-        echo "Error: Restore failed."
+        err "Error: Restore failed."
         return 1
     fi
 }
@@ -360,14 +335,14 @@ au-test(){
             aplay "$file_name"
             return 0
         else
-            echo "Error: No record found at $file_name"
+            err "Error: No record found at $file_name"
             return 1
         fi
     fi
 
     if [[ ! "$duration" =~ ^[0-9]+$ ]]; then
-        echo "Error: '$duration' is not a valid number."
-        echo "Usage: au-test [duration_in_sec] or au-test -p"
+        err "Error: '$duration' is not a valid number."
+        info "Usage: au-test [duration_in_sec] or au-test -p"
         return 1
     fi
 
@@ -380,7 +355,7 @@ yt-download() {
     local upload_location="$HOME/Videos/YtDownloads/%(uploader)s - %(title)s.%(ext)s"
 
     if [[ -z "$url" ]]; then
-        echo "Usage: yt-download <url>"
+        err "Usage: yt-download <url>"
         return 1
     fi
 
@@ -399,26 +374,29 @@ pdf-comp(){
     local input="$1"
     local output="$2"
 
-    if [ -z "$input" ] || [ -z "$output" ]; then
-        echo "Usage: pdf-comp input_file output_name"
+    if [[ -z "$input" ]]; then
+        err "Usage: pdf-comp input_file"
         return 1
     fi
+
+    output="$(current_time)_${input%.*}.pdf"
+
     gs -sDEVICE=pdfwrite \
     -dCompatibilityLevel=1.4 \
     -dPDFSETTINGS=/printer \
     -dNOPAUSE \
     -dQUIET \
     -dBATCH \
-    -sOutputFile="${output}.pdf" \
+    -sOutputFile="$output" \
     "$input"
 }
 
 docx-comp() {
     local input="$1"
-    local output="$2"
+    local output="$(current_time)_${input%.*}.docx"
 
-    if [ -z "$input" ] || [ -z "$output" ]; then
-        echo "Usage: docx-comp input.docx output_name"
+    if [[ -z "$input" ]]; then
+        err "Usage: docx-comp input.docx "
         return 1
     fi
 
@@ -431,16 +409,13 @@ docx-comp() {
             -exec mogrify -resize 2000x2000\> -strip -quality 85 {} +
     fi
 
-    (cd "$tmp_dir" && zip -rq - .) > "${output}.docx"
+    (cd "$tmp_dir" && zip -rq - .) > "$output"
 
     rm -rf "$tmp_dir"
 
-    echo "Compressed docx saved as ${output}.docx"
+    log "Compressed docx saved as ${output}.docx"
 }
 
-make_tmp() {
-    mktemp --suffix=".$1"
-}
 
 ff-whisper-audio() {
     local log_level="error"
@@ -450,7 +425,7 @@ ff-whisper-audio() {
     while (( $# )); do
         case "$1" in
             -*)
-                echo "Unknown option: $1"
+                err "Unknown option: $1"
                 return 1
                 ;;
             *)
@@ -465,7 +440,7 @@ ff-whisper-audio() {
     done
 
     [[ -z "$input" || -z "$output" ]] && {
-        echo "Usage: ff-whisper-audio [-v] input_file output.wav"
+        err "Usage: ff-whisper-audio  input_file output.wav"
         return 1
     }
 
@@ -489,11 +464,17 @@ whisper() {
     while (( $# )); do
         case "$1" in
             -m|--model)
-                model_alias="$2"
-                shift 2
+                if [[ -n "$2" && "$2" != -* ]];then
+                    model_alias="$2"
+                    shift 2
+                else
+                    err "Error: -m requires a model name."
+                    return 1
+                fi
                 ;;
             -*)
-                echo "Unknown option: $1"
+                err "Unknown option: $1"
+                info "Usage: whisper [-m model] <input_file>"
                 return 1
                 ;;
             *)
@@ -507,15 +488,19 @@ whisper() {
         sm-en)
             model="/usr/share/whisper.cpp-model-small.en/ggml-small.en.bin"
             ;;
+        md-en)
+            modal="/usr/share/whisper.cpp-model-medium.en/ggml-medium.en.bin"
+            ;;
         *)
-            echo "Unknown model : $model_alias"
+            info "Available models: * sm-en: small model (English)
+                              * md-en: medium model (English)"
             return 1
             ;;
     esac
 
     if [[ -z "$input" ]]; then
-        echo "No input file provided"
-        echo "Usage: whisper [options] input.wav"
+        err "No input file provided"
+        info "Usage: whisper [options] input.wav"
         return 1
     fi
 
@@ -551,5 +536,5 @@ whisper() {
         -of "$output"
 
     local exit_status=$?
-    alert "Transcribe Finished"  "$exit_status"
+    alert "Transcribe Finished" "$output.txt"  "$exit_status" "Whisper"
 }

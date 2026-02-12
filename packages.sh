@@ -90,6 +90,7 @@ packages=(
     "patool"
     "obs-cmd"
     "obs-plugin-backgroundremoval"
+    "whisper.cpp"
 )
 
 #

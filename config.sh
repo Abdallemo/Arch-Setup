@@ -1,20 +1,13 @@
 #!/usr/bin/env bash
 source ./helper.sh
 
-link() {
-  src="$1"
-  dst="$2"
-  mkdir -p "$(dirname "$dst")"
-  ln -sf "$src" "$dst"
-  log "Linked $dst → $src"
-}
-
-
 link $ROOT_DIR/dotfiles/.zshrc ~/.zshrc
 
 
 mkdir -p ~/.config/zsh_scripts
+
 link $ROOT_DIR/dotfiles/common.sh ~/.config/zsh_scripts/common.sh
+link $ROOT_DIR/helper.sh ~/.config/zsh_scripts/helper.sh
 
 if [ ! -d ~/.config/nvim ]; then
   log "Cloning Neovim config..."
