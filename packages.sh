@@ -89,7 +89,7 @@ packages=(
     "python-setuptools-reproducible"
     "patool"
     "obs-cmd"
-    "obs-plugin-backgroundremoval"
+    "obs-backgroundremoval"
     "whisper.cpp"
     "qemu-full"
     "virt-manager"
