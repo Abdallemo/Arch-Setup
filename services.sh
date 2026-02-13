@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 source ./helper.sh
 
-actions_todo=()
 
 mysql-setup(){
     log "Enabling MariaDB..."

@@ -29,7 +29,7 @@ case ":$PATH:" in
 esac
 
 # Aliases
-alias ls='lsd -hS --group-directories-first'
+#alias ls='lsd -hS --group-directories-first'
 alias grep='grep --color=auto'
 alias p=pnpm
 alias now='date +%Y%m%d_%H%M%S'

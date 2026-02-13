@@ -27,6 +27,41 @@ setup_config() {
     fi
 }
 
+davinci-distrobox-setup(){
+    #version 20.3.2
+    log "setting up davinici"
+    local container=davinci-fedora
+    distrobox-create --name "$container" --image fedora:42 --yes
+
+    distrobox enter "$container" -- sudo dnf install alsa-plugins-pulseaudio libxcrypt-compat xcb-util-renderutil xcb-util-wm \
+    pulseaudio-libs xcb-util xcb-util-image xcb-util-keysyms libxkbcommon-x11 libXrandr \
+    libXtst mesa-libGLU mtdev libSM libXcursor libXi libXinerama libxkbcommon libglvnd-egl \
+    libglvnd-glx libglvnd-opengl libICE librsvg2 libSM libX11 libXcursor libXext libXfixes \
+    libXi libXinerama libxkbcommon libxkbcommon-x11 libXrandr libXrender libXtst libXxf86vm \
+    mesa-libGLU mtdev pulseaudio-libs xcb-util alsa-lib apr apr-util fontconfig freetype \
+    libglvnd fuse-libs xcb-util-cursor zlib  rocm-openCL -y
+
+    mkdir -p "$HOME/.local/share/icons"
+    mkdir -p "$HOME/.local/share/applications"
+
+    actions_todo+=(
+        "'for davinic resolve download v20.3.2;'"
+        "distrobox enter $container"
+        "run: DaVinci_Resolve_20.3.2_Linux.run from the downloaded one"
+        "sudo mkdir /opt/resolve/libs/disabled-libraries"
+        "sudo mv /opt/resolve/libs/libglib-2.0.so* /opt/resolve/libs/disabled-libraries/"
+        "sudo mv /opt/resolve/libs/libgio-2.0.so* /opt/resolve/libs/disabled-libraries/"
+        "sudo mv /opt/resolve/libs/libgmodule-2.0.so* /opt/resolve/libs/disabled-libraries/"
+    )
+
+    cp $ROOT_DIR/dotfiles/davinci_conf/davinci-resolve.png $HOME/.local/share/icons/davinci-resolve.png
+    cp $ROOT_DIR/dotfiles/davinci_conf/resolve.desktop  $HOME/.local/share/applications/resolve.desktop
+
+    sed -i "s|Icon=.*|Icon=$HOME/.local/share/icons/davinci-resolve.png|" "$HOME/.local/share/applications/resolve.desktop"
+    update-desktop-database ~/.local/share/applications
+
+}
+
 link $ROOT_DIR/dotfiles/.zshrc $HOME/.zshrc
 mkdir -p ~/.config/zsh_scripts
 link $ROOT_DIR/dotfiles/common.sh $HOME/.config/zsh_scripts/common.sh

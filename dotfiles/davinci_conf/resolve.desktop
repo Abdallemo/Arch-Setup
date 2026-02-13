@@ -1,0 +1,17 @@
+[Desktop Entry]
+Name=DaVinci Resolve
+GenericName=Video Editor
+Comment=Professional motion picture color correction and video editing
+Categories=AudioVideo;Video;Graphics;Recorder;
+Exec=distrobox enter -n resolve -- /opt/resolve/bin/resolve
+Icon=/home/abdallemo/.local/share/icons/davinci-resolve.png
+Keywords=distrobox;
+NoDisplay=false
+Terminal=false
+TryExec=/usr/bin/distrobox
+Type=Application
+Actions=Remove;
+
+[Desktop Action Remove]
+Name=Remove Resolve from system
+Exec=/usr/bin/distrobox rm  resolve
