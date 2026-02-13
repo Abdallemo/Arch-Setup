@@ -4,14 +4,18 @@ source ./helper.sh
 
 log "Starting Arch system setup..."
 
-safe_run ./packages.sh
-safe_run ./config.sh
-safe_run ./services.sh
+safe_run source ./packages.sh
+safe_run source ./config.sh
+safe_run source ./services.sh
 
-echo
+
 if [ ${#FAILED[@]} -ne 0 ]; then
   warn "Some steps failed:"
-  printf ' - %s\n' "${FAILED[@]}"
+  err "${FAILED[@]}"
 else
   log "System setup completed successfully "
 fi
+
+for action in "${actions_todo[@]}"; do
+        warn "TODO: $action"
+done

@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-source ./helper.sh
 
 setup_config() {
     link_default() { link "$source_dir" "$target_dir"; }
@@ -29,17 +28,18 @@ setup_config() {
 
 davinci-distrobox-setup(){
     #version 20.3.2
+    echo ""
     log "setting up davinici"
     local container=davinci-fedora
-    distrobox-create --name "$container" --image fedora:42 --yes
+    safe_run distrobox-create --name "$container" --image fedora:42 --yes
 
-    distrobox enter "$container" -- sudo dnf install alsa-plugins-pulseaudio libxcrypt-compat xcb-util-renderutil xcb-util-wm \
+    safe_run distrobox enter "$container" -- sudo dnf install alsa-plugins-pulseaudio libxcrypt-compat xcb-util-renderutil xcb-util-wm \
     pulseaudio-libs xcb-util xcb-util-image xcb-util-keysyms libxkbcommon-x11 libXrandr \
     libXtst mesa-libGLU mtdev libSM libXcursor libXi libXinerama libxkbcommon libglvnd-egl \
     libglvnd-glx libglvnd-opengl libICE librsvg2 libSM libX11 libXcursor libXext libXfixes \
     libXi libXinerama libxkbcommon libxkbcommon-x11 libXrandr libXrender libXtst libXxf86vm \
     mesa-libGLU mtdev pulseaudio-libs xcb-util alsa-lib apr apr-util fontconfig freetype \
-    libglvnd fuse-libs xcb-util-cursor zlib  rocm-openCL -y
+    libglvnd fuse-libs xcb-util-cursor zlib  rocm-opencl -y
 
     mkdir -p "$HOME/.local/share/icons"
     mkdir -p "$HOME/.local/share/applications"
@@ -89,3 +89,5 @@ git config --global user.name >/dev/null || \
 
 git config --global user.email >/dev/null || \
   safe_run git config --global user.email "learn3038it@gmail.com"
+
+davinci-distrobox-setup

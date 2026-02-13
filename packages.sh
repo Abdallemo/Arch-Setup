@@ -95,8 +95,8 @@ packages=(
     "virt-manager"
     "bottles"
     "audacity"
-    wl-clipboard
-    distrobox
+    "wl-clipboard"
+    "distrobox"
 )
 
 #

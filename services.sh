@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-source ./helper.sh
-
 
 mysql-setup(){
     log "Enabling MariaDB..."
@@ -18,7 +16,7 @@ mysql-setup(){
 
 pg-setup(){
     log "Enabling PostgreSQL..."
-    if [ ! -d /var/lib/postgres/data ]; then
+    if [ ! -d /var/lib/postgres/data ] || [ -z "$(ls -A /var/lib/postgres/data)" ]; then
       log "Initializing PostgreSQL data directory..."
       safe_run sudo -u postgres initdb -D /var/lib/postgres/data
     else
@@ -48,9 +46,7 @@ main() {
     redis-setup
     dsk-streaming-setup
 
-    for action in "${actions_todo[@]}"; do
-        log "TODO: $action"
-    done
+
 }
 
 main "$@"
