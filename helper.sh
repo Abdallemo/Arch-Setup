@@ -60,7 +60,7 @@ link() {
 }
 
 safe_run() {
-    # 1. Peek at the first argument for the logging function
+
     local out_func="log"
     if declare -f "$1" > /dev/null; then
         out_func="$1"
@@ -69,14 +69,11 @@ safe_run() {
 
     local cmd_str="$*"
 
-    # 2. Log the start of the command in your chosen color
     "$out_func" "Running: $cmd_str"
 
-    # 3. Execute directly - no pipes, no redirects, no 'read' issues
     "$@"
     local status=$?
 
-    # 4. Log the result
     if [ $status -eq 0 ]; then
         log "Finished: $cmd_str"
     else
