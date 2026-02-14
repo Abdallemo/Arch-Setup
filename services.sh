@@ -40,12 +40,22 @@ dsk-streaming-setup(){
     safe_run systemctl --user enable --now sunshine
 }
 
+setup_phone_link(){
+    safe_run sudo firewall-cmd --zone=public --permanent --add-service=kdeconnect
+    actions_todo+=(
+        "phone connect"
+        "adb tcpip 5555"
+        "adb kill-server && adb connect [PHONE_IP]:5555"
+        "scrcpy --tcpip=[PHONE_IP]:5555 --turn-screen-off --stay-awake --power-off-on-close"
+    )
+}
+
 main() {
     mysql-setup
     pg-setup
     redis-setup
     dsk-streaming-setup
-
+    setup_phone_link
 
 }
 

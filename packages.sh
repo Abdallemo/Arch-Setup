@@ -10,7 +10,6 @@ packages=(
     "zip"
     "zsh"
     "neovim"
-    "nodejs"
     "npm"
     "go"
     "ffmpeg"
@@ -66,7 +65,6 @@ packages=(
     "haruna"
     "kamoso"
     "spectacle"
-
     "7zip"
     "cpu-x"
     "cpufetch"
@@ -97,6 +95,9 @@ packages=(
     "audacity"
     "wl-clipboard"
     "distrobox"
+    "scrcpy"
+    "adb"
+    "kdeconnect"
 )
 
 #
@@ -112,7 +113,8 @@ fi
 log "Installing packages..."
 safe_run yay -S --needed --noconfirm "${packages[@]}"
 
-log "Installing global npm tools..."
+log "Installing global webdev tools..."
+safe_run yay -S --needed --noconfirm nodejs
 safe_run npm install -g pnpm
 
 log "Installing uv..."
