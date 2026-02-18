@@ -29,11 +29,14 @@ case ":$PATH:" in
 esac
 
 # Aliases
-#alias ls='lsd -hS --group-directories-first'
+alias ls='(){ if command -v lsd >/dev/null 2>&1; then command lsd -hS --group-directories-first "$@"; else command ls -hS --group-directories-first "$@"; fi }'
+
 alias grep='grep --color=auto'
 alias p=pnpm
 alias now='date +%Y%m%d_%H%M%S'
-
+alias zsh_conf='zed $HOME/.config/zsh_scripts/common.sh'
+alias kreload="kbuildsycoca6 --noincremental"
+alias reload="source ~/.zshrc"
 # Styles
 zstyle ':fzf-tab:*' fzf-flags --preview-window=hidden --height=50%
 

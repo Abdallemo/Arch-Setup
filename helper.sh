@@ -94,7 +94,7 @@ alert() {
         notify-send "$title" "$msg" --icon=video-x-generic --app-name="$app_name"
         canberra-gtk-play -i message-new-instant &
     else
-        notify-send "$title Failed" "Check terminal for logs" --icon=dialog-error --app-name="$app_name"
+        notify-send "$title Failed" "Check ${app_name} for logs" --icon=dialog-error --app-name="$app_name"
         canberra-gtk-play -i dialog-error &
     fi
 }

@@ -5,11 +5,19 @@ yay-clean() {
         err "Usage: yayclean <package_name>"
         return 1
     fi
-    local cache_dir="$HOME/.cache/yay/$1"
-    if [ -d "$cache_dir" ]; then
-        rm -rf "$cache_dir"
-        log "✓ Removed cache for: $1"
-    else
+    local found=0
+
+    for cache_dir in $(find "$HOME/.cache/yay" -maxdepth 1 -name "$1")
+    do
+        if [ -d "$cache_dir" ]
+        then
+            rm -rf "$cache_dir"
+            log "✓ Removed cache for: $(basename "$cache_dir")"
+            found=1
+        fi
+    done
+
+    if [ "$found" -eq 0 ]; then
         err "✗ No cache folder found for: $1"
     fi
 }
