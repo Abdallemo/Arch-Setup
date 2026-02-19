@@ -546,3 +546,35 @@ whisper() {
     local exit_status=$?
     alert "Transcribe Finished" "$output.txt"  "$exit_status" "Whisper"
 }
+
+
+peek(){
+    local dev="$1"
+
+    if [[ -z "$dev" ]];then
+        err "No device name provided"
+        info "Usage: peek /dev/..."
+        return 1
+    fi
+
+    if [[ ! -e "$dev" ]]; then
+        err "Error: $dev not found."
+        return 1
+    fi
+
+    sudo hexdump -C "$dev"
+
+
+}
+
+
+lsf (){
+    local target="${1:-.}"
+    # if [[ -z "$file" ]];then
+    #     err "No file is Provided"
+    #     info "Usage: foo file"
+    #     return 1
+    # fi
+
+    find "$target" -maxdepth 1 -type f -exec lsd -l {} +
+}

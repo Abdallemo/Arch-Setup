@@ -37,6 +37,8 @@ alias now='date +%Y%m%d_%H%M%S'
 alias zsh_conf='zed $HOME/.config/zsh_scripts/common.sh'
 alias kreload="kbuildsycoca6 --noincremental"
 alias reload="source ~/.zshrc"
+alias htop='btop'
+alias ipa='ip -br addr'
 # Styles
 zstyle ':fzf-tab:*' fzf-flags --preview-window=hidden --height=50%
 
