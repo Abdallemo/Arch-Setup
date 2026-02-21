@@ -99,20 +99,32 @@ alert() {
     fi
 }
 
-set_config_var() {
-    local key=$1
-    local sep=$2
-    local value=$3
-    local file=$4
+setcfg() {
+    local key="$1"
+    local sep="$2"
+    local value="$3"
+    local file="$4"
     local new_line="${key}${sep}${value}"
 
+    if [[ -z "$key" || -z "$sep" || -z "$value" || -z "$file" ]];then
+      err "Usage: setcfg [key] [seperator (eg. =,:)] [value] [source_file]"
+      return 1
+
+    fi
     [ ! -f "$file" ] && safe_run sudo touch "$file"
 
-    if grep -q "^[[:space:]]*$key" "$file"; then
+    if grep -q "^[[:space:]]*${key}${sep}" "$file"; then
         log "Updating '$key' in $file..."
         safe_run sudo sed -i "s|^[[:space:]]*$key.*$|$new_line|" "$file"
     else
         log "Adding '$key' to $file..."
         safe_run bash -c "echo '$new_line' | sudo tee -a '$file' > /dev/null"
     fi
+}
+getcfg() {
+    local key=$1
+    [[ -z "$key" ]] && return 1
+    local locations=("/etc" "$HOME/.config" "/usr/share" "/usr/local/share")
+
+    grep -rI "^[[:space:]]*${key}[=: ][^\$]" "${locations[@]}" 2>/dev/null
 }
