@@ -576,7 +576,7 @@ lsf (){
 getmem(){
     local mode=${1:-m}
 
-   while (( $# )); do
+    while (( $# )); do
         case "$1" in
             -a)
                 free -m | awk '/Mem:|Swap:/ {total += $2} END {print int(total / 1000) " GB Total"}'
