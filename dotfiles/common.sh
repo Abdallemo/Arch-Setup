@@ -570,14 +570,9 @@ peek(){
 
 lsf (){
     local target="${1:-.}"
-    # if [[ -z "$file" ]];then
-    #     err "No file is Provided"
-    #     info "Usage: foo file"
-    #     return 1
-    # fi
 
     find "$target" -maxdepth 1 -type f -exec lsd -l {} +
 }
 getmem(){
-    free -m | grep Mem | awk '{print $2}'
+    free -m | awk '/Mem:/ {print int($2 / 1000) " GB"}'
 }

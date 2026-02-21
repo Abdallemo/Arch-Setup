@@ -135,6 +135,11 @@ sysdrivers() {
     {
         echo "Kernel: $(uname -rm)"
         lspci -k | grep -A 2 -i vga | sed -E 's/^\s*//'
+
+        local rebar_size=$(lspci -v -s "$gpu_addr" | grep "Memory at" | grep "prefetchable" | grep -oE "size=[0-9]+[MG]" | head -n 1)
+        [[ -n "$rebar_size" ]] && echo "Resizable BAR: [$rebar_size]" || echo "Resizable BAR: Hidden"
+
+
     } | column -t -s ":" | sed 's/^/  /'
 
 
