@@ -574,5 +574,23 @@ lsf (){
     find "$target" -maxdepth 1 -type f -exec lsd -l {} +
 }
 getmem(){
+    local mode=${1:-m}
+
+   while (( $# )); do
+        case "$1" in
+            -a)
+                free -m | awk '/Mem:|Swap:/ {total += $2} END {print int(total / 1000) " GB Total"}'
+                return 0
+                ;;
+            -m)
+                free -m | awk '/Mem:/ {print int($2 / 1000) " GB"}'
+                return 0
+                ;;
+            -*)
+                err "Unknown option: $1"
+                return 1
+                ;;
+        esac
+    done
     free -m | awk '/Mem:/ {print int($2 / 1000) " GB"}'
 }
