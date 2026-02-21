@@ -578,3 +578,6 @@ lsf (){
 
     find "$target" -maxdepth 1 -type f -exec lsd -l {} +
 }
+getmem(){
+    free -m | grep Mem | awk '{print $2}'
+}

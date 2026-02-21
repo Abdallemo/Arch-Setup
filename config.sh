@@ -82,6 +82,7 @@ setup_config "MangoHud"
 
 set_config_var "export PGSERVICEFILE" "=" "$HOME/.config/pg_service/.pg_service.conf" "/etc/profile.d/pg.sh"
 set_config_var "GTK_USE_PORTAL" "=" "1" "/etc/environment"
+set_config_var "MANGOHUD" "=" "1" "/etc/environment"
 
 
 git config --global user.name >/dev/null || \
