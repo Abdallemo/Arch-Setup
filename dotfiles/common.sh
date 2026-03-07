@@ -594,3 +594,56 @@ getmem(){
     done
     free -m | awk '/Mem:/ {print int($2 / 1000) " GB"}'
 }
+
+getethr(){
+lspci -k | grep -A 3 Ethernet
+}
+
+
+getcfg() {
+    local key=$1
+    [[ -z "$key" ]] && return 1
+    local locations=("/etc" "$HOME/.config" "/usr/share" "/usr/local/share")
+
+    grep -rI "^[[:space:]]*${key}[=: ][^\$]" "${locations[@]}" 2>/dev/null
+}
+
+sysdrivers() {
+
+    log "SYSTEM & KERNEL"
+    {
+        echo "Kernel: $(uname -rm)"
+        lspci -k | grep -A 2 -i vga | sed -E 's/^\s*//'
+
+        local rebar_size=$(lspci -v -s "$gpu_addr" | grep "Memory at" | grep "prefetchable" | grep -oE "size=[0-9]+[MG]" | head -n 1)
+        [[ -n "$rebar_size" ]] && echo "Resizable BAR: [$rebar_size]" || echo "Resizable BAR: Hidden"
+
+
+    } | column -t -s ":" | sed 's/^/  /'
+
+
+    echo ""
+    log "OPENGL (MESA)"
+    if command -v glxinfo &> /dev/null; then
+        glxinfo | grep -E "OpenGL version|Device" | sed -E 's/ string//; s/^\s*//' | column -t -s ":" | sed 's/^/  /'
+    else
+        warn "mesa-utils not installed"
+    fi
+
+    echo ""
+    log "VULKAN"
+    if command -v vulkaninfo &> /dev/null; then
+
+        vulkaninfo --summary | grep -E "deviceName|driverName|driverInfo" | sed -E 's/^\s*//' | column -t -s "=" | sed 's/^/  /'
+    else
+        warn "vulkan-tools not installed"
+    fi
+
+    echo ""
+    log "COMPUTE (ROCm/OpenCL)"
+    if command -v rocminfo &> /dev/null; then
+        rocminfo | grep "Marketing Name" | head -n 2 | sed -E 's/^\s*//' | column -t -s ":" | sed 's/^/  /'
+    else
+        err "ROCm/OpenCL runtime not detected"
+    fi
+}
