@@ -35,7 +35,7 @@ alias grep='grep --color=auto'
 alias p=pnpm
 alias now='date +%Y%m%d_%H%M%S'
 alias zsh_conf='zed $HOME/.config/zsh_scripts/common.sh'
-alias kreload="kbuildsycoca6 --noincremental"
+#alias kreload="kbuildsycoca6 --noincremental"
 alias reload="source ~/.zshrc"
 alias htop='btop'
 alias ipa='ip -br addr'
@@ -46,3 +46,5 @@ CUSTOM_SCRIPTS="$HOME/.config/zsh_scripts/common.sh"
 if [ -f "$CUSTOM_SCRIPTS" ]; then
     source "$CUSTOM_SCRIPTS"
 fi
+
+eval "$(direnv hook zsh)"

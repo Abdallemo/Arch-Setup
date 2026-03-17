@@ -548,7 +548,7 @@ whisper() {
 }
 
 
-peek(){
+devdump(){
     local dev="$1"
 
     if [[ -z "$dev" ]];then
@@ -646,4 +646,56 @@ sysdrivers() {
     else
         err "ROCm/OpenCL runtime not detected"
     fi
+}
+
+runtime() {
+
+    local start=$(date +%s)
+
+    trap 'local end=$(date +%s); echo -e "\nTook $((end - start))s"; trap - INT; return' INT
+
+    "$@"
+
+    local end=$(date +%s)
+    echo "Took $((end - start))s"
+
+    trap - INT
+}
+
+kreload() {
+    while (( $# )); do
+        case "$1" in
+            -f|--f)
+                systemctl --user restart plasma-plasmashell
+                log "done"
+                return 0
+                ;;
+            -*)
+                err "Unknown option: $1"
+                return 1
+                ;;
+            *)
+                kbuildsycoca6 --noincremental
+                log "done"
+                return 0
+                ;;
+            esac
+    done
+
+}
+gh-commit(){
+  local message="Write a git commit message for my git status and git diff using this exact format:
+
+  [One-line summary title]
+
+
+   - [Concise change description]
+   - [Concise change description]
+
+
+  Rules:
+   - Use only - for bullets (no numbers).
+   - Use plain, readable English (no buzzwords or overselling).
+   - Keep it direct, human, and concise."
+   gemini "$message"
 }
