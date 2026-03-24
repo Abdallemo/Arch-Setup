@@ -809,11 +809,11 @@ gh-commit(){
 }
 
 logout(){
-    qdbus org.kde.Shutdown /Shutdown logout
+    qdbus6 org.kde.Shutdown /Shutdown logout
 }
 reboot(){
-    qdbus org.kde.Shutdown /Shutdown logoutAndReboot
+    qdbus6 org.kde.Shutdown /Shutdown logoutAndReboot
 }
 shutdown(){
-    qdbus org.kde.Shutdown /Shutdown logoutAndShutdown
+    qdbus6 org.kde.Shutdown /Shutdown logoutAndShutdown
 }
