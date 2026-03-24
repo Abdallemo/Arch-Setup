@@ -53,7 +53,7 @@ ff-gpu() {
         return 1
     fi
 
-    output="$(current_time)_${input%.*}.mp4"
+   output="${input:h}/$(current_time)_${${input:t}%.*}.mp4"
 
     log "Encoding $input to ${output}..."
     ffmpeg -hide_banner \
@@ -65,7 +65,7 @@ ff-gpu() {
         -hwaccel_output_format vaapi \
         -i "$input" \
         -filter_hw_device va \
-        -vf 'format=p010,hwupload' \
+       -vf 'scale_vaapi=format=p010' \
         -c:v hevc_vaapi \
         -profile:v main10 \
         -rc_mode CQP \
@@ -104,7 +104,7 @@ ff-resolve() {
         return 1
     fi
 
-    output="$(current_time)_${input%.*}.mov"
+    output="${input:h}/$(current_time)_${${input:t}%.*}.mov"
     log "Converting $input to ${output}.mov (CPU MPEG-2)..."
 
     ffmpeg -hide_banner \
@@ -156,7 +156,7 @@ ff-resolve-pro() {
         err "Usage: ff-resolve-pro [-v] [-lb] input_file "
         return 1
     fi
-    output="$(current_time)_${input%.*}.mov"
+    output="${input:h}/$(current_time)_${${input:t}%.*}.mov"
     log "Converting $input to ${output} for DaVinci Resolve..."
     info "Profile: $profile"
 
@@ -206,7 +206,8 @@ ff-cpu() {
         return 1
     fi
 
-    output="$(current_time)_${input%.*}.mp4"
+       output="${input:h}/$(current_time)_${${input:t}%.*}.mp4"
+
     log "Encoding $input to ${output} (CPU x264)..."
     ffmpeg -hide_banner \
     -loglevel "$log_level" \
@@ -359,25 +360,62 @@ au-test(){
 
 
 yt-download() {
-    local url="$1"
+    local url=""
     local upload_location="$HOME/Videos/YtDownloads/%(uploader)s - %(title)s.%(ext)s"
+    local extra_opts=()
+    local audio_opts=()
+    local cookies=(
+        --cookies-from-browser
+        brave
+    )
+
+    while (( $# )); do
+        case "$1" in
+            -audio|--audio)
+                audio_opts=(
+                    -x
+                    --audio-format mp3
+                    --audio-quality 0
+                )
+                shift
+                ;;
+            -*)
+                extra_opts+=("$1")
+                if [[ -n "$2" && "$2" != -* ]]; then
+                    extra_opts+=("$2")
+                    shift 2
+                else
+                    shift
+                fi
+                ;;
+            *)
+                url="$1"
+                shift
+                ;;
+        esac
+    done
 
     if [[ -z "$url" ]]; then
-        err "Usage: yt-download <url>"
+        err "Usage: yt-download [yt-dlp options] [-audio] <url>"
         return 1
     fi
 
     mkdir -p "$HOME/Videos/YtDownloads"
 
     yt-dlp \
+        "${cookies[@]}" \
         -N 8 \
         --quiet --progress \
         --newline \
         --restrict-filenames \
         -o "$upload_location" \
         --exec 'echo -e "\n\033[0;32m{}"' \
+        "${audio_opts[@]}" \
+        "${extra_opts[@]}" \
         "$url"
+    alert "Youtube Download" "" "$?"
 }
+
 pdf-comp(){
     local input="$1"
     local output="$2"
@@ -698,4 +736,14 @@ gh-commit(){
    - Use plain, readable English (no buzzwords or overselling).
    - Keep it direct, human, and concise."
    gemini "$message"
+}
+
+logout(){
+    qdbus org.kde.Shutdown /Shutdown logout
+}
+reboot(){
+    qdbus org.kde.Shutdown /Shutdown logoutAndReboot
+}
+shutdown(){
+    qdbus org.kde.Shutdown /Shutdown logoutAndShutdown
 }
