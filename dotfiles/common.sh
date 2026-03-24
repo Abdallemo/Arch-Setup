@@ -368,6 +368,7 @@ yt-download() {
         --cookies-from-browser
         brave
     )
+    local recode_opts=(--recode-video mp4)
 
     while (( $# )); do
         case "$1" in
@@ -410,10 +411,79 @@ yt-download() {
         --restrict-filenames \
         -o "$upload_location" \
         --exec 'echo -e "\n\033[0;32m{}"' \
+        "${recode_opts[@]}" \
         "${audio_opts[@]}" \
         "${extra_opts[@]}" \
         "$url"
     alert "Youtube Download" "" "$?"
+}
+ff-social () {
+    local log_level="error"
+    local input=""
+    local output=""
+    while [ $# -gt 0 ]
+    do
+        case "$1" in
+            (-v | --verbose) log_level="info"
+                shift ;;
+            (-*) err "Unknown option: $1"
+                return 1 ;;
+            (*) if [ -z "$input" ]
+                then
+                    input="$1"
+                fi
+                shift ;;
+        esac
+    done
+
+    if [[ -z "$input" ]]
+    then
+        err "Usage: ff-social [-v] input_file"
+        return 1
+    fi
+
+    output="${input:h}/SOCIAL_$(current_time)_${${input:t}%.*}.mp4"
+    log "Encoding $input to Social-friendly MP4 (Target < 30MB)..."
+
+
+    ffmpeg -hide_banner -loglevel "$log_level" -stats \
+        -init_hw_device vaapi=va:/dev/dri/renderD128 -hwaccel vaapi -hwaccel_device va -hwaccel_output_format vaapi \
+        -i "$input" \
+        -filter_hw_device va -vf 'scale_vaapi=format=nv12' \
+        -c:v hevc_vaapi \
+        -rc_mode VBR -b:v 2M -maxrate 3M -bufsize 6M \
+        -c:a aac -b:a 128k "$output"
+
+    local exit_status=$?
+    alert "Social Encode" "$output" "$exit_status"
+}
+
+ff-cut () {
+    local input=""
+    local start="00:00:00"
+    local duration=""
+    local output=""
+
+    if [[ $# -lt 2 ]]; then
+        err "Usage: ff-cut <input_file> <duration_seconds> [start_timestamp]"
+        return 1
+    fi
+
+    input="$1"
+    duration="$2"
+    [[ -n "$3" ]] && start="$3"
+
+    local clean_start="${start//:/_}"
+    output="${input:h}/CUT_${clean_start}_${input:t}"
+
+    log "Snipping $duration seconds from $input starting at $start..."
+
+
+    ffmpeg -hide_banner -loglevel error -stats \
+        -ss "$start" -i "$input" -t "$duration" -c copy "$output"
+
+    local exit_status=$?
+    alert "Quick Cut" "$output" "$exit_status"
 }
 
 pdf-comp(){
