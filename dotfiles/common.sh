@@ -756,19 +756,26 @@ sysdrivers() {
     fi
 }
 
-runtime() {
-
+runtime () {
     local start=$(date +%s)
 
     trap 'local end=$(date +%s); echo -e "\nTook $((end - start))s"; trap - INT; return' INT
 
-    "$@"
+    bash -c "$*"
 
     local end=$(date +%s)
     echo "Took $((end - start))s"
 
     trap - INT
 }
+
+runtime_sm () {
+    local start=$(date +%s)
+    "$@"
+    echo "Took $(( $(date +%s) - start ))s"
+}
+
+
 
 kreload() {
     while (( $# )); do
@@ -804,7 +811,8 @@ gh-commit(){
   Rules:
    - Use only - for bullets (no numbers).
    - Use plain, readable English (no buzzwords or overselling).
-   - Keep it direct, human, and concise."
+   - Keep it direct, human, and concise.
+   - Do Justice for the complexty of the work . "
    gemini "$message"
 }
 
@@ -816,4 +824,103 @@ reboot(){
 }
 shutdown(){
     qdbus6 org.kde.Shutdown /Shutdown logoutAndShutdown
+}
+
+# gen-rand-dir() {
+
+#     local day=$(date +%a)
+#     local prefix="tmp-$day-"
+
+#     local last_num=$(ls -d ${prefix}[0-9][0-9][0-9] 2>/dev/null | \
+#                      grep -oE '[0-9]{3}$' | \
+#                      sort -n | tail -1)
+
+#     last_num=${last_num:-0}
+
+#     local next_num=$(printf "%03d" $((10#$last_num + 1)))
+#     local dirname="${prefix}${next_num}"
+
+
+#     if mkdir "$dirname" 2>/dev/null; then
+#         echo "Created: $dirname"
+#     else
+#         echo "Error: Could not create '$dirname'. Does it already exist?"
+#     fi
+# }
+
+
+
+
+_get_next_dir() {
+    local day=$(date +%a)
+    local prefix="tmp-$day-"
+
+    local last_num=$(ls -d ${prefix}[0-9][0-9][0-9] 2>/dev/null | \
+                     grep -oE '[0-9]{3}$' | \
+                     sort -n | tail -1)
+
+    last_num=${last_num:-0}
+    local next_num=$(printf "%03d" $((10#$last_num + 1)))
+    local dirname="${prefix}${next_num}"
+
+    if mkdir "$dirname" 2>/dev/null; then
+        echo "$dirname"
+    else
+        return 1
+    fi
+}
+
+gen-rand-dir() {
+    local lang="none"
+
+    while (( $# )); do
+        case "$1" in
+            -g|--go)     lang="go"; shift ;;
+            -p|--python) lang="python"; shift ;;
+            *) shift ;;
+        esac
+    done
+
+    local new_dir
+    new_dir=$(_get_next_dir)
+
+    if [ -z "$new_dir" ]; then
+        echo "Error: Failed to create directory."
+        return 1
+    fi
+
+    echo "Created and entering: $new_dir"
+    cd "$new_dir" || return
+
+    case "$lang" in
+        "go")
+            go mod init "$new_dir" 2>/dev/null
+            cat <<EOF > main.go
+package main
+import "fmt"
+
+func main() {
+    fmt.Println("Hello World")
+}
+EOF
+            echo "Added Go boilerplate."
+            ;;
+        "python")
+            cat <<EOF > main.py
+def main():
+    print("Hello World")
+
+if __name__ == "__main__":
+    main()
+EOF
+            echo "Added Python boilerplate."
+            ;;
+    esac
+}
+setup_ollama_rdna2(){
+  echo -e "[Service]\nEnvironment=\"HSA_OVERRIDE_GFX_VERSION=10.3.0\"" | sudo tee /etc/systemd/system/ollama.service.d/override.conf
+}
+
+gccrun() {
+    gcc "$1" -o "${1%.*}" && "./${1%.*}"
 }

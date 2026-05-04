@@ -48,3 +48,18 @@ if [ -f "$CUSTOM_SCRIPTS" ]; then
 fi
 
 eval "$(direnv hook zsh)"
+export FZF_CTRL_T_OPT="--preview 'bat -n --color=always --line-range :500 {}'"
+export FZF_ALT_C_OPTS="--preview 'eza --tree --color=always {} | head -200'"
+
+_fzf_comprun() {
+local command=$1
+shift
+case “$command” in
+    cd)           fzf --preview 'eza --tree --color=always {} | head -200' "$@" ;;
+    export|unset) fzf --preview "eval 'echo \$' {}" "$@" ;;
+    ssh)          fzf --preview 'dig {}' "$@" ;;
+    *)            fzf --preview "--preview 'bat -n --color=always —-line-range :500 {}'" "$@" ;;
+esac
+}
+export HSA_OVERRIDE_GFX_VERSION=10.3.0
+export UV_CACHE_DIR="/games/uv-cache"
