@@ -372,12 +372,13 @@ yt-download() {
 
     while (( $# )); do
         case "$1" in
-            -audio|--audio)
+            -a|--audio)
                 audio_opts=(
                     -x
                     --audio-format mp3
                     --audio-quality 0
                 )
+                recode_opts=()
                 shift
                 ;;
             -*)
@@ -397,7 +398,7 @@ yt-download() {
     done
 
     if [[ -z "$url" ]]; then
-        err "Usage: yt-download [yt-dlp options] [-audio] <url>"
+        err "Usage: yt-download [yt-dlp options] [-a/--audio] <url>"
         return 1
     fi
 
@@ -922,5 +923,183 @@ setup_ollama_rdna2(){
 }
 
 gccrun() {
-    gcc "$1" -o "${1%.*}" && "./${1%.*}"
+    local out=${1%.*}
+    gcc "$1" -o "$out" && "./$out"
 }
+
+g++run() {
+    local out=${1%.*}
+    g++ "$1" -o "$out" && "./$out"
+}
+
+
+# backup start##
+#
+BAK_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/bak"
+STORE="$BAK_HOME/files"
+INDEX="$BAK_HOME/index.tsv"
+
+next_backup_id() {
+    if [[ ! -s "$INDEX" ]]; then
+        echo 1
+    else
+        awk -F'\t' 'END { print $1 + 1 }' "$INDEX"
+    fi
+}
+
+create_backup() {
+    local input="$1"
+
+    [[ ! -e "$input" ]] && {
+        err "'$input' does not exist"
+        return 1
+    }
+
+    local timestamp
+    timestamp=$(current_time)
+
+    local name
+    name=$(basename "$input")
+
+    if [[ -f "$input" ]]; then
+        local stored="${timestamp}-${name}"
+
+        cp -- "$input" "$STORE/$stored"
+        local id
+        id=$(next_backup_id)
+
+        printf "%s\t%s\tfile\t%s\t%s\n" \
+            "$id" \
+            "$timestamp" \
+            "$(realpath "$input")" \
+            "$stored" \
+            >> "$INDEX"
+        echo "Backed up file -> $stored"
+
+    elif [[ -d "$input" ]]; then
+        local stored="${timestamp}-${name}.tar.zst"
+
+        tar --zstd -cf "$STORE/$stored" -C "$(dirname "$input")" "$name"
+
+        local id
+        id=$(next_backup_id)
+
+        printf "%s\t%s\tdir\t%s\t%s\n" \
+            "$id" \
+            "$timestamp" \
+            "$(realpath "$input")" \
+            "$stored" \
+            >> "$INDEX"
+        echo "Backed up directory -> $stored"
+    fi
+}
+
+list_backups() {
+    if [[ ! -s "$INDEX" ]]; then
+        echo "No backups."
+        return
+    fi
+
+    printf "ID\tTIME\tTYPE\tPATH\tFILE\n"
+    column -t -s $'\t' "$INDEX"
+}
+
+restore_backup() {
+    local target="$1"
+
+    [[ -z "$target" ]] && {
+        err "Missing filename."
+        return 1
+    }
+
+    local line
+
+    line=$(awk -F'\t' -v id="$target" '$1 == id' "$INDEX")
+
+    [[ -z "$line" ]] && {
+        err "No backup found."
+        return 1
+    }
+
+    IFS=$'\t' read -r id time type original stored <<<"$line"
+
+    if [[ "$type" == "file" ]]; then
+        cp "$STORE/$stored" "./${target}.bak"
+        echo "Restored to ./${target}.bak"
+    else
+        tar -xf "$STORE/$stored"
+        mv "$target" "${target}.bak"
+        echo "Restored to ./${target}.bak"
+    fi
+}
+
+usage() {
+    cat <<EOF
+Usage:
+    bak <file|directory>      Create backup
+    bak -l                    List backups
+    bak -r <name>             Restore latest backup
+    bak -d <name>             Delete latest backup
+EOF
+}
+delete_backup() {
+    local target="$1"
+
+    [[ -z "$target" ]] && {
+        err "Missing filename"
+        return 1
+    }
+
+    local line
+    line=$(awk -F'\t' -v id="$target" '$1 == id' "$INDEX")
+
+    [[ -z "$line" ]] && {
+        err "No backup found for: $target"
+        return 1
+    }
+
+    IFS=$'\t' read -r id timestamp type original stored <<< "$line"
+
+    rm -i "$STORE/$stored"
+
+
+    awk -F'\t' -v id="$id" '
+        $1 != id
+    ' "$INDEX" > "$INDEX.tmp" && mv "$INDEX.tmp" "$INDEX"
+
+    echo "Removed backup: $stored"
+}
+
+bak() {
+    [[ -d "$STORE" ]] || mkdir -p "$STORE"
+    [[ -f "$INDEX" ]] || : > "$INDEX"
+
+    case "$1" in
+        -l|--list)
+            list_backups
+            ;;
+
+        -r|--restore)
+            shift
+            restore_backup "$1"
+            ;;
+
+        -d|--delete)
+            shift
+            delete_backup "$1"
+            ;;
+
+        -h|--help)
+            usage
+            ;;
+
+        "")
+            usage
+            ;;
+
+        *)
+            create_backup "$1"
+            ;;
+    esac
+}
+# backup end##

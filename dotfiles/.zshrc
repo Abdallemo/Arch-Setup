@@ -63,3 +63,7 @@ esac
 }
 export HSA_OVERRIDE_GFX_VERSION=10.3.0
 export UV_CACHE_DIR="/games/uv-cache"
+
+
+# Added by Antigravity CLI installer
+export PATH="/home/abdallemo/.local/bin:$PATH"
