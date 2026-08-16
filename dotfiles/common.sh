@@ -561,11 +561,13 @@ ff-whisper-audio() {
         return 1
     }
 
+    # Added -af (audio filter) with loudnorm and silenceremove
     ffmpeg -y -nostdin \
         -hide_banner \
         -loglevel "$log_level" \
         -stats \
         -i "$input" \
+        -af "loudnorm=I=-16:TP=-1.5:LRA=11,silenceremove=start_periods=1:start_duration=0.5:start_threshold=-40dB:detection=rms:stop_periods=-1:stop_duration=1.5:stop_threshold=-40dB" \
         -ar 16000 \
         -ac 1 \
         -c:a pcm_s16le \
@@ -577,6 +579,7 @@ whisper() {
     local model_alias="sm-en"
     local model=""
     local output=""
+    local lang="auto"
 
     while (( $# )); do
         case "$1" in
@@ -586,6 +589,15 @@ whisper() {
                     shift 2
                 else
                     err "Error: -m requires a model name."
+                    return 1
+                fi
+                ;;
+            -l|--language)
+                if [[ -n "$2" && "$2" != -* ]];then
+                    lang="$2"
+                    shift 2
+                else
+                    err "Error: -l requires a language name."
                     return 1
                 fi
                 ;;
@@ -606,11 +618,23 @@ whisper() {
             model="/usr/share/whisper.cpp-model-small.en/ggml-small.en.bin"
             ;;
         md-en)
-            modal="/usr/share/whisper.cpp-model-medium.en/ggml-medium.en.bin"
+            model="/usr/share/whisper.cpp-model-medium.en/ggml-medium.en.bin"
+            ;;
+        sm)
+            model="/usr/share/whisper.cpp-model-small/ggml-small.bin"
+            ;;
+        md)
+            model="/usr/share/whisper.cpp-model-medium/ggml-medium.bin"
+            ;;
+        lg)
+            model="/usr/share/whisper.cpp-model-large-v3/ggml-large-v3.bin"
             ;;
         *)
             info "Available models: * sm-en: small model (English)
-                              * md-en: medium model (English)"
+                              * md-en: medium model (English)
+                              * sm:    small model (Multilingual)
+                              * md:    medium model (Multilingual)
+                              * lg:    large-v3 model (Multilingual)"
             return 1
             ;;
     esac
@@ -645,15 +669,17 @@ whisper() {
            ;;
    esac
 
-
+    local start=$(date +%s)
     whisper-cli \
         -m "$model" \
         -f "$input" \
+        -l "$lang" \
         -otxt \
         -of "$output"
 
     local exit_status=$?
     alert "Transcribe Finished" "$output.txt"  "$exit_status" "Whisper"
+    echo "Took $(( $(date +%s) - start ))s"
 }
 
 
